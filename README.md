@@ -18,6 +18,12 @@ Reads the config files of Claude Code, Claude Desktop, Cursor, VS Code and Gemin
 go install github.com/nobu666/mcp-exposure@latest
 ```
 
+With Homebrew:
+
+```
+brew install nobu666/tap/mcp-exposure
+```
+
 Or download a binary for macOS, Linux or Windows from [Releases](https://github.com/nobu666/mcp-exposure/releases).
 
 ## Flags
