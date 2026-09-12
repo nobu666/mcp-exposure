@@ -10,7 +10,7 @@ xapi  claude-code/user  stdio  WARN
   SECRET_INLINE    env.CLIENT_SECRET is stored in plaintext
 ```
 
-Reads the config files of Claude Code, Claude Desktop, Cursor, VS Code and Gemini CLI. No root, no dependencies, one static binary. One block per server (name, client/scope, transport, verdict, then the command or URL and each finding), so it reads the same on any terminal width. Exit code is `1` when any server is `RED`.
+Reads the config files of Claude Code (including enabled plugins), Claude Desktop, Cursor, VS Code, Gemini CLI and Codex CLI. No root, no dependencies, one static binary. One block per server (name, client/scope, transport, verdict, then the command or URL and each finding), so it reads the same on any terminal width. Exit code is `1` when any server is `RED`.
 
 ## Install
 
@@ -65,16 +65,17 @@ Remote servers (`https://`) are never probed. The table shows their transport an
 | Cursor | `.cursor/mcp.json` | `~/.cursor/mcp.json` |
 | VS Code | `.vscode/mcp.json` | `~/Library/Application Support/Code/User/mcp.json` |
 | Gemini CLI | `.gemini/settings.json` | `~/.gemini/settings.json` |
+| Codex CLI | `.codex/config.toml` | `~/.codex/config.toml` (`[mcp_servers.<id>]` tables: `command`, `args`, `env`, `url`) |
+| Claude Code plugins | | enabled plugins' `.claude-plugin/plugin.json` and `.mcp.json`, shown with scope `plugin:<name>` |
 
-Project files are looked up in the current directory.
+Project files are looked up in the current directory. The Codex reader handles only the `[mcp_servers.*]` shape (strings, string arrays, inline and sub-table `env`), not general TOML.
 
 ## What it does not do
 
-- It does not read Codex CLI's `config.toml`, or the `.mcp.json` files that Claude Code plugins bring along.
 - It does not check the host firewall. `LISTEN_ALL` says the socket is bound to every interface, not that a neighbor can reach it.
-- It does not ask any registry whether a package exists or is known to be malicious.
-- It does not send anything to remote servers.
-- `SECRET_INLINE` for an untracked file inside a repository is only a warning, even though `git add .` would commit it.
+- It does not ask any registry whether a package is known to be malicious. `--suggest` only asks for the latest version.
+- It does not send anything to remote MCP servers.
+- `SECRET_INLINE` in an untracked, not-ignored file inside a repository stays a warning, with a note that `git add .` would commit it. Only a tracked file is red.
 
 ## License
 

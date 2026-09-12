@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -46,6 +47,9 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(2)
 	}
+	servers = append(servers, loadCodex(filepath.Join(cwd, ".codex", "config.toml"), "project")...)
+	servers = append(servers, loadCodex(filepath.Join(home, ".codex", "config.toml"), "user")...)
+	servers = append(servers, loadPlugins(home, cwd)...)
 
 	addrs := localAddrs()
 	var results []Result

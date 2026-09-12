@@ -130,12 +130,33 @@ func secretInline(m map[string]string, file, where string) []Finding {
 		}
 		level := "warn"
 		note := where + "." + k + " is stored in plaintext"
-		if gitTracked(file) {
+		switch gitState(file) {
+		case "tracked":
 			level, note = "red", note+" in a git-tracked file"
+		case "untracked":
+			note += " in a file that git add . would commit (untracked, not ignored)"
 		}
 		f = append(f, Finding{Code: "SECRET_INLINE", Level: level, Note: note})
 	}
 	return f
+}
+
+// gitState: tracked | untracked (inside a repo, not ignored) | ignored | none.
+func gitState(file string) string {
+	if _, err := exec.LookPath("git"); err != nil {
+		return "none"
+	}
+	dir, base := filepath.Dir(file), filepath.Base(file)
+	if exec.Command("git", "-C", dir, "ls-files", "--error-unmatch", base).Run() == nil {
+		return "tracked"
+	}
+	if exec.Command("git", "-C", dir, "rev-parse", "--is-inside-work-tree").Run() != nil {
+		return "none"
+	}
+	if exec.Command("git", "-C", dir, "check-ignore", "-q", base).Run() == nil {
+		return "ignored"
+	}
+	return "untracked"
 }
 
 func secretKeyName(k string) bool {
@@ -178,14 +199,6 @@ func splitWords(k string) []string {
 
 func looksLikePath(v string) bool {
 	return strings.HasPrefix(v, "/") || strings.HasPrefix(v, "~") || strings.HasPrefix(v, "./") || strings.HasPrefix(v, "../")
-}
-
-func gitTracked(file string) bool {
-	if _, err := exec.LookPath("git"); err != nil {
-		return false
-	}
-	cmd := exec.Command("git", "-C", filepath.Dir(file), "ls-files", "--error-unmatch", filepath.Base(file))
-	return cmd.Run() == nil
 }
 
 func isLoopbackHost(h string) bool {
