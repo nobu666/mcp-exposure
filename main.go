@@ -96,32 +96,16 @@ func printTable(results []Result) {
 		fmt.Println("no MCP servers found in known config files")
 		return
 	}
-	fmt.Printf("%-14s %-8s %-18s %-6s %-40s %-32s %s\n", "CLIENT", "SCOPE", "NAME", "TYPE", "TARGET", "FINDINGS", "VERDICT")
-	for _, r := range results {
-		var codes []string
+	// One block per server: a wide table wraps badly on narrow terminals,
+	// and the findings need their notes anyway.
+	for i, r := range results {
+		if i > 0 {
+			fmt.Println()
+		}
+		fmt.Printf("%s  %s/%s  %s  %s\n", r.Name, r.Client, r.Scope, r.Transport, r.Verdict)
+		fmt.Printf("  %s\n", target(r.Server))
 		for _, f := range r.Findings {
-			codes = append(codes, f.Code)
-		}
-		fs := strings.Join(codes, ",")
-		if fs == "" {
-			fs = "-"
-		}
-		fmt.Printf("%-14s %-8s %-18s %-6s %-40s %-32s %s\n",
-			r.Client, r.Scope, trunc(r.Name, 18), r.Transport, trunc(target(r.Server), 40), trunc(fs, 32), r.Verdict)
-	}
-	fmt.Println()
-	for _, r := range results {
-		for _, f := range r.Findings {
-			if f.Level != "info" {
-				fmt.Printf("%s/%s: %s: %s\n", r.Client, r.Name, f.Code, f.Note)
-			}
+			fmt.Printf("  %-16s %s\n", f.Code, f.Note)
 		}
 	}
-}
-
-func trunc(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	return s[:n-1] + "…"
 }

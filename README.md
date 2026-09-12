@@ -4,14 +4,13 @@ Lists the MCP servers registered in the AI clients on your machine and shows how
 
 ```
 $ mcp-exposure
-CLIENT         SCOPE    NAME               TYPE   TARGET                                   FINDINGS                         VERDICT
-claude-code    user     xapi               stdio  npx -y @xdevplatform/xurl mcp https://a… UNPINNED,SECRET_INLINE           WARN
-
-claude-code/xapi: UNPINNED: @xdevplatform/xurl is fetched at every start with no exact version
-claude-code/xapi: SECRET_INLINE: env.CLIENT_SECRET is stored in plaintext
+xapi  claude-code/user  stdio  WARN
+  npx -y @xdevplatform/xurl mcp https://api.x.com/mcp
+  UNPINNED         @xdevplatform/xurl is fetched at every start with no exact version
+  SECRET_INLINE    env.CLIENT_SECRET is stored in plaintext
 ```
 
-Reads the config files of Claude Code, Claude Desktop, Cursor, VS Code and Gemini CLI. No root, no dependencies, one static binary. Exit code is `1` when any row is `RED`.
+Reads the config files of Claude Code, Claude Desktop, Cursor, VS Code and Gemini CLI. No root, no dependencies, one static binary. One block per server (name, client/scope, transport, verdict, then the command or URL and each finding), so it reads the same on any terminal width. Exit code is `1` when any server is `RED`.
 
 ## Install
 
