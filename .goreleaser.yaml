@@ -13,3 +13,14 @@ checksum:
   name_template: checksums.txt
 changelog:
   use: github
+brews:
+  - repository:
+      owner: nobu666
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    directory: Formula
+    homepage: https://github.com/nobu666/mcp-exposure
+    description: "List the MCP servers registered on this machine and how each one is exposed"
+    license: MIT
+    test: |
+      system "#{bin}/mcp-exposure", "--help"
