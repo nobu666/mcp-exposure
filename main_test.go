@@ -187,6 +187,45 @@ func TestIsLoopbackHost(t *testing.T) {
 	}
 }
 
+func TestIgnoredFindingsDoNotCount(t *testing.T) {
+	fs := []Finding{{Code: "PLAINTEXT_REMOTE", Level: "red", Ignored: true}, {Code: "UNPINNED", Level: "warn"}}
+	if v := verdict(fs); v != "WARN" {
+		t.Errorf("ignored red should not count, got %s", v)
+	}
+	fs[1].Ignored = true
+	if v := verdict(fs); v != "ok" {
+		t.Errorf("all ignored should be ok, got %s", v)
+	}
+}
+
+func TestSuggestAppendsPin(t *testing.T) {
+	old := lookup
+	defer func() { lookup = old }()
+	var asked []string
+	lookup = func(eco, name string) (release, error) {
+		asked = append(asked, eco+":"+name)
+		return release{"1.3.1", "2026-07-21"}, nil
+	}
+	s := Server{Transport: "stdio", Command: "npx", Args: []string{"-y", "@xdevplatform/xurl@latest", "mcp"}}
+	fs := check(s)
+	suggest(s, fs)
+	if len(asked) != 1 || asked[0] != "npm:@xdevplatform/xurl" {
+		t.Errorf("lookup called with %v", asked)
+	}
+	if len(fs) != 1 || !strings.HasSuffix(fs[0].Note, "pin as @xdevplatform/xurl@1.3.1") {
+		t.Errorf("unexpected: %+v", fs)
+	}
+	s = Server{Transport: "stdio", Command: "uvx", Args: []string{"mcp-server-git>=1.0"}}
+	fs = check(s)
+	suggest(s, fs)
+	if asked[1] != "pypi:mcp-server-git" || !strings.HasSuffix(fs[0].Note, "pin as mcp-server-git==1.3.1") {
+		t.Errorf("unexpected: %v %+v", asked, fs)
+	}
+	if n := bareName("npm", "@scope/name@^2"); n != "@scope/name" {
+		t.Errorf("bareName: %s", n)
+	}
+}
+
 func TestCheckPlaintextRemote(t *testing.T) {
 	f := check(Server{Transport: "http", URL: "http://mcp.example.com/mcp"})
 	if len(f) != 1 || f[0].Code != "PLAINTEXT_REMOTE" || f[0].Level != "red" {

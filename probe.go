@@ -40,7 +40,7 @@ func probeLocal(s Server, addrs []string) []Finding {
 	}
 	open := openAddrs(port, addrs)
 	if len(open) == 0 {
-		return []Finding{{"DOWN", "info", "nothing listening on port " + port}}
+		return []Finding{{Code: "DOWN", Level: "info", Note: "nothing listening on port " + port}}
 	}
 	var f []Finding
 	allIfaces := false
@@ -50,7 +50,7 @@ func probeLocal(s Server, addrs []string) []Finding {
 		}
 	}
 	if allIfaces {
-		f = append(f, Finding{"LISTEN_ALL", "red", "port " + port + " is bound to all interfaces (spec: SHOULD bind to 127.0.0.1)"})
+		f = append(f, Finding{Code: "LISTEN_ALL", Level: "red", Note: "port " + port + " is bound to all interfaces (spec: SHOULD bind to 127.0.0.1)"})
 	}
 	if s.Transport == "ws" {
 		return f
@@ -65,7 +65,7 @@ func probeLocal(s Server, addrs []string) []Finding {
 	target.Host = net.JoinHostPort(open[0], port)
 	plain, err := send(method, target.String(), "")
 	if err != nil {
-		return append(f, Finding{"NO_HTTP", "info", err.Error()})
+		return append(f, Finding{Code: "NO_HTTP", Level: "info", Note: err.Error()})
 	}
 	spoofed, _ := send(method, target.String(), spoofHost)
 	// Probe the non-loopback side too when bound to all interfaces; some
@@ -84,12 +84,12 @@ func probeLocal(s Server, addrs []string) []Finding {
 	rebind, auth := judge(plain, spoofed)
 	switch rebind {
 	case "open":
-		f = append(f, Finding{"REBIND_OPEN", "red", "accepts Host/Origin " + spoofHost + " (spec: MUST validate Origin)"})
+		f = append(f, Finding{Code: "REBIND_OPEN", Level: "red", Note: "accepts Host/Origin " + spoofHost + " (spec: MUST validate Origin)"})
 	case "?":
-		f = append(f, Finding{"REBIND_UNKNOWN", "info", "plain " + strconv.Itoa(plain) + ", spoofed " + strconv.Itoa(spoofed)})
+		f = append(f, Finding{Code: "REBIND_UNKNOWN", Level: "info", Note: "plain " + strconv.Itoa(plain) + ", spoofed " + strconv.Itoa(spoofed)})
 	}
 	if auth == "none" {
-		f = append(f, Finding{"AUTH_NONE", "warn", "accepted with no credentials (spec: SHOULD authenticate)"})
+		f = append(f, Finding{Code: "AUTH_NONE", Level: "warn", Note: "accepted with no credentials (spec: SHOULD authenticate)"})
 	}
 	return f
 }

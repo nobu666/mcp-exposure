@@ -10,9 +10,10 @@ import (
 )
 
 type Finding struct {
-	Code  string `json:"code"`
-	Level string `json:"level"` // red | warn | info
-	Note  string `json:"note"`
+	Code    string `json:"code"`
+	Level   string `json:"level"` // red | warn | info
+	Note    string `json:"note"`
+	Ignored bool   `json:"ignored,omitempty"` // accepted via --ignore: shown, not counted
 }
 
 // check runs the static checks that need no network.
@@ -21,19 +22,19 @@ func check(s Server) []Finding {
 	switch s.Transport {
 	case "stdio":
 		if pkg, ok := unpinned(s.Command, s.Args); ok {
-			f = append(f, Finding{"UNPINNED", "warn", pkg + " is fetched at every start with no exact version"})
+			f = append(f, Finding{Code: "UNPINNED", Level: "warn", Note: pkg + " is fetched at every start with no exact version"})
 		}
 		f = append(f, secretInline(s.Env, s.File, "env")...)
 	default:
 		u, err := url.Parse(s.URL)
 		if err != nil {
-			return append(f, Finding{"BAD_URL", "info", s.URL})
+			return append(f, Finding{Code: "BAD_URL", Level: "info", Note: s.URL})
 		}
 		host := u.Hostname()
 		if host == "host.docker.internal" {
-			f = append(f, Finding{"CONTAINER_ALIAS", "info", "host.docker.internal resolves differently outside a container; not probed"})
+			f = append(f, Finding{Code: "CONTAINER_ALIAS", Level: "info", Note: "host.docker.internal resolves differently outside a container; not probed"})
 		} else if (u.Scheme == "http" || u.Scheme == "ws") && !isLoopbackHost(host) {
-			f = append(f, Finding{"PLAINTEXT_REMOTE", "red", u.Scheme + ":// to " + host + " sends headers and data in the clear"})
+			f = append(f, Finding{Code: "PLAINTEXT_REMOTE", Level: "red", Note: u.Scheme + ":// to " + host + " sends headers and data in the clear"})
 		}
 		f = append(f, secretInline(s.Headers, s.File, "headers")...)
 	}
@@ -132,7 +133,7 @@ func secretInline(m map[string]string, file, where string) []Finding {
 		if gitTracked(file) {
 			level, note = "red", note+" in a git-tracked file"
 		}
-		f = append(f, Finding{"SECRET_INLINE", level, note})
+		f = append(f, Finding{Code: "SECRET_INLINE", Level: level, Note: note})
 	}
 	return f
 }

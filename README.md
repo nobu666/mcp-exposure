@@ -18,6 +18,17 @@ Reads the config files of Claude Code, Claude Desktop, Cursor, VS Code and Gemin
 go install github.com/nobu666/mcp-exposure@latest
 ```
 
+Or download a binary for macOS, Linux or Windows from [Releases](https://github.com/nobu666/mcp-exposure/releases).
+
+## Flags
+
+| Flag | Meaning |
+|---|---|
+| `--suggest` | For each `UNPINNED` package, ask npm or PyPI for the latest version and print the pinned form (`latest is 1.3.1 (2026-07-21), pin as @xdevplatform/xurl@1.3.1`). Off by default because it sends package names to the registry |
+| `--ignore xapi:SECRET_INLINE,other` | Findings you have looked at and accepted, as `NAME:CODE` or just `NAME`. Still shown, marked `(ignored)`, not counted in the verdict or the exit code |
+| `--config path.json` | Read one more file with a `mcpServers` object |
+| `--json` | Print everything, including each finding's note |
+
 ## What it checks
 
 | Finding | Level | Meaning |
@@ -49,7 +60,7 @@ Remote servers (`https://`) are never probed. The table shows their transport an
 | VS Code | `.vscode/mcp.json` | `~/Library/Application Support/Code/User/mcp.json` |
 | Gemini CLI | `.gemini/settings.json` | `~/.gemini/settings.json` |
 
-Project files are looked up in the current directory. Pass `--config path.json` to add any file with a `mcpServers` object. `--json` prints everything, including each finding's note.
+Project files are looked up in the current directory.
 
 ## What it does not do
 

@@ -25,7 +25,15 @@ type Result struct {
 func main() {
 	asJSON := flag.Bool("json", false, "output JSON")
 	extra := flag.String("config", "", "extra mcpServers JSON file to read")
+	ignore := flag.String("ignore", "", "accepted findings, comma separated: NAME or NAME:CODE (e.g. xapi:SECRET_INLINE); still shown, not counted in the verdict")
+	doSuggest := flag.Bool("suggest", false, "ask npm/PyPI for the latest version of each UNPINNED package and print the pinned form (sends package names to the registry)")
 	flag.Parse()
+	ignored := map[string]bool{}
+	for _, x := range strings.Split(*ignore, ",") {
+		if x = strings.TrimSpace(x); x != "" {
+			ignored[x] = true
+		}
+	}
 
 	cwd, _ := os.Getwd()
 	home, _ := os.UserHomeDir()
@@ -47,6 +55,12 @@ func main() {
 			if u, err := url.Parse(s.URL); err == nil && isLoopbackHost(u.Hostname()) {
 				r.Findings = append(r.Findings, probeLocal(s, addrs)...)
 			}
+		}
+		if *doSuggest {
+			suggest(s, r.Findings)
+		}
+		for i := range r.Findings {
+			r.Findings[i].Ignored = ignored[s.Name] || ignored[s.Name+":"+r.Findings[i].Code]
 		}
 		r.Verdict = verdict(r.Findings)
 		results = append(results, r)
@@ -74,6 +88,9 @@ func main() {
 func verdict(fs []Finding) string {
 	v := "ok"
 	for _, f := range fs {
+		if f.Ignored {
+			continue
+		}
 		switch f.Level {
 		case "red":
 			return "RED"
@@ -105,7 +122,11 @@ func printTable(results []Result) {
 		fmt.Printf("%s  %s/%s  %s  %s\n", r.Name, r.Client, r.Scope, r.Transport, r.Verdict)
 		fmt.Printf("  %s\n", target(r.Server))
 		for _, f := range r.Findings {
-			fmt.Printf("  %-16s %s\n", f.Code, f.Note)
+			note := f.Note
+			if f.Ignored {
+				note += " (ignored)"
+			}
+			fmt.Printf("  %-16s %s\n", f.Code, note)
 		}
 	}
 }
